@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movie Recommender </title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Hind:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      border: 0;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    :root {
+      font-size: calc(16px + (24 - 16)*(100vw - 320px)/(1920 - 320));
+    }
+    body, button, input {
+      font: 1em Hind, sans-serif;
+      line-height: 1.5em;
+    }
+    body, input {
+      color: #171717;
+    }
+    body {
+      background: #ffffff;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 50%;
+      width: 100%;
+      text-align: center;
+    }
+    #viz { 
+      background-color: #ffffff;
+      width: 100%; 
+      height: 520px; 
+      border: 1px solid #ddd; 
+      border-radius: 6px; 
+      margin-top: 12px; 
+    }
+    .result-item { cursor: pointer; }
+    .node-label { font-size: 11px; pointer-events: none; }
+
+    /* Search bar styling (applied from user-provided snippet) */
+    body, .search-bar {
+      display: flex;
+    }
+    .search-bar input,
+    .search-btn, 
+    .search-btn:before, 
+    .search-btn:after {
+      transition: all 0.25s ease-out;
+    }
+    .search-bar input,
+    .search-btn {
+      width: 3em;
+      height: 3em;
+    }
+    .search-bar input:invalid:not(:focus),
+    .search-btn {
+      cursor: pointer;
+    }
+    .search-bar,
+    .search-bar input:focus,
+    .search-bar input:valid  {
+      width: 100%;
+    }
+    .search-bar input:focus,
+    .search-bar input:not(:focus) + .search-btn:focus {
+      outline: transparent;
+    }
+    .search-bar {
+      margin: auto;
+      padding: 1.5em;
+      justify-content: center;
+      max-width: 30em;
+    }
+    .search-bar input {
+      background: transparent;
+      border-radius: 1.5em;
+      box-shadow: 0 0 0 0.4em #171717 inset;
+      padding: 0.75em;
+      transform: translate(0.5em,0.5em) scale(0.5);
+      transform-origin: 100% 0;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+    .search-bar input::-webkit-search-decoration {
+      -webkit-appearance: none;
+    }
+    .search-bar input:focus,
+    .search-bar input:valid {
+      background: #fff;
+      border-radius: 0.375em 0 0 0.375em;
+      box-shadow: 0 0 0 0.1em #d9d9d9 inset;
+      transform: scale(1);
+    }
+    .search-btn {
+      background: #171717;
+      border-radius: 0 0.75em 0.75em 0 / 0 1.5em 1.5em 0;
+      padding: 0.75em;
+      position: relative;
+      transform: translate(0.25em,0.25em) rotate(45deg) scale(0.25,0.125);
+      transform-origin: 0 50%;
+    }
+    .search-btn:before, 
+    .search-btn:after {
+      content: "";
+      display: block;
+      opacity: 0;
+      position: absolute;
+    }
+    .search-btn:before {
+      border-radius: 50%;
+      box-shadow: 0 0 0 0.2em #f1f1f1 inset;
+      top: 0.75em;
+      left: 0.75em;
+      width: 1.2em;
+      height: 1.2em;
+    }
+    .search-btn:after {
+      background: #f1f1f1;
+      border-radius: 0 0.25em 0.25em 0;
+      top: 51%;
+      left: 51%;
+      width: 0.75em;
+      height: 0.25em;
+      transform: translate(0.2em,0) rotate(45deg);
+      transform-origin: 0 50%;
+    }
+    .search-btn span {
+      display: inline-block;
+      overflow: hidden;
+      width: 1px;
+      height: 1px;
+    }
+
+    /* Active state */
+    .search-bar input:focus + .search-btn,
+    .search-bar input:valid + .search-btn {
+      background: #008cff;
+      border-radius: 0 0.375em 0.375em 0;
+      transform: scale(1);
+    }
+    .search-bar input:focus + .search-btn:before, 
+    .search-bar input:focus + .search-btn:after,
+    .search-bar input:valid + .search-btn:before, 
+    .search-bar input:valid + .search-btn:after {
+      opacity: 1;
+    }
+    .search-bar input:focus + .search-btn:hover,
+    .search-bar input:valid + .search-btn:hover,
+    .search-bar input:valid:not(:focus) + .search-btn:focus {
+      background: #0c48db;
+    }
+    .search-bar input:focus + .search-btn:active,
+    .search-bar input:valid + .search-btn:active {
+      transform: translateY(1px);
+    }
+
+    @media screen and (prefers-color-scheme: dark) {
+      body, input {
+        color: #f1f1f1;
+      }
+      body {
+        background: #171717;
+      }
+      .search-bar input {
+        box-shadow: 0 0 0 0.4em #f1f1f1 inset;
+      }
+      .search-bar input:focus,
+      .search-bar input:valid {
+        background: #3d3d3d;
+        box-shadow: 0 0 0 0.1em #3d3d3d inset;
+      }
+      .search-btn {
+        background: #f1f1f1;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1 class="mb-3">Movie Recommender</h1>
+
+  <form id="search-form" class="search-bar">
+    <input id="searchInput" type="search" placeholder="Type movie name..." autocomplete="off" pattern=".*\S.*" required>
+    <button type="submit" class="search-btn">
+      <span>Recommend</span>
+    </button>
+  </form>
+
+  <div id="suggestions" class="list-group" style="max-width: 900px; display: none;"></div>
+
+  <div id="results" class="mt-4"></div>
+
+  <div id="graph-section" style="display:none;">
+    <h3 class="mt-4">Graph visualization</h3>
+    <div id="viz"></div>
+  </div>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+const API_ROOT = "";
+
+// debounce helper
+function debounce(fn, ms=200){
+  let t;
+  return (...args)=>{
+    clearTimeout(t);
+    t = setTimeout(()=>fn(...args), ms);
+  };
+}
+
+// autocomplete
+const input = document.getElementById("searchInput");
+const suggestions = document.getElementById("suggestions");
+
+input.addEventListener("input", debounce(async () => {
+  const q = input.value.trim();
+  suggestions.innerHTML = "";
+  if (!q) {
+    suggestions.style.display = "none";
+    return;
+  }
+  try {
+    const res = await fetch(`${API_ROOT}/api/search?q=${encodeURIComponent(q)}`);
+    if (!res.ok) return;
+    const list = await res.json();
+    if (list.length === 0) {
+      suggestions.style.display = "none";
+      return;
+    }
+    suggestions.style.display = "block";
+    list.forEach(title=>{
+      const a = document.createElement("a");
+      a.className = "list-group-item list-group-item-action result-item";
+      a.textContent = title;
+      a.onclick = () => { input.value = title; suggestions.innerHTML = ""; suggestions.style.display = "none"; };
+      suggestions.appendChild(a);
+    });
+  } catch(err) {
+    console.error("Autocomplete error", err);
+  }
+}, 180));
+
+document.addEventListener("click", (e)=>{
+  if (!suggestions.contains(e.target) && e.target !== input) {
+    suggestions.innerHTML = "";
+    suggestions.style.display = "none";
+  }
+});
+
+// submit handler
+document.getElementById("search-form").addEventListener("submit", async (ev)=>{
+  ev.preventDefault();
+  const title = input.value.trim();
+  if (!title) return;
+  try {
+    const recRes = await fetch(`${API_ROOT}/api/recommend?title=${encodeURIComponent(title)}`);
+    const recJson = await recRes.json();
+    displayRecommendations(title, recJson);
+    // reveal graph area then draw
+    const gs = document.getElementById("graph-section");
+    if (gs) gs.style.display = "block";
+    drawGraph(title);
+  } catch(err) {
+    console.error("Recommendation error", err);
+  }
+});
+
+function displayRecommendations(title, rec) {
+  const el = document.getElementById("results");
+  const info = rec && rec.movie ? rec.movie : {title: title, actors: [], directors: [], genres: [], year: null};
+  const actorsText = Array.isArray(info.actors) && info.actors.length ? info.actors.join(", ") : (info.actors || "N/A");
+  const directorsText = Array.isArray(info.directors) && info.directors.length ? info.directors.join(", ") : (info.directors || "N/A");
+  const genresText = Array.isArray(info.genres) && info.genres.length ? info.genres.join(", ") : (info.genres || "N/A");
+
+  el.innerHTML = `
+    <div class="card mb-3">
+      <div class="card-body">
+        <h5 class="card-title">${info.title || title}</h5>
+        <p class="card-text">
+          <strong>Actors:</strong> ${actorsText}<br>
+          <strong>Director:</strong> ${directorsText}<br>
+          <strong>Genres:</strong> ${genresText}<br>
+          <strong>Year:</strong> ${info.year || ''}
+        </p>
+      </div>
+    </div>
+    <h2>Recommendations for "<em>${info.title || title}</em>"</h2>
+  `;
+
+  const sections = [
+    {key:"actors", title:"Actor-based", format: r => `${r.movie} — Shared actors: ${Array.isArray(r.shared_actors)? r.shared_actors.join(", "): r.shared_actors}`},
+    {key:"directors", title:"Director-based", format: r => `${r.movie} — Director: ${r.shared_director}`},
+    {key:"genres", title:"Genre-based", format: r => `${r.movie} — Shared genres: ${Array.isArray(r.shared_genres)? r.shared_genres.join(", "): r.shared_genres}`},
+    {key:"year", title:"Year-based", format: r => `${r.movie} — Year: ${r.year}`}
+  ];
+
+  sections.forEach(s=>{
+    const part = document.createElement("div");
+    part.innerHTML = `<h4>${s.title}</h4>`;
+    const ul = document.createElement("ul");
+    ul.className = "list-group mb-3";
+    const arr = rec[s.key] || [];
+    if (arr.length === 0) {
+      const li = document.createElement("li");
+      li.className = "list-group-item"; li.textContent = "No recommendations.";
+      ul.appendChild(li);
+    } else {
+      arr.forEach(r=>{
+        const li = document.createElement("li");
+        li.className = "list-group-item";
+        li.textContent = s.format(r);
+        ul.appendChild(li);
+      });
+    }
+    part.appendChild(ul);
+    el.appendChild(part);
+  });
+}
+
+// D3 graph drawing (fetches JSON from /api/graph)
+async function drawGraph(title) {
+  const viz = document.getElementById("viz");
+  viz.innerHTML = ""; // clear
+  const width = viz.clientWidth || 960;
+  const height = 520;
+
+  // create SVG
+  const svg = d3.select("#viz").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+  // fetch graph JSON
+  let graph;
+  try {
+    const resp = await fetch(`${API_ROOT}/api/graph?title=${encodeURIComponent(title)}`);
+    graph = await resp.json();
+  } catch(e) {
+    console.error("Failed to fetch graph", e);
+    svg.append("text").attr("x",20).attr("y",30).text("Failed to load graph.");
+    return;
+  }
+
+  if (!graph.nodes || graph.nodes.length === 0) {
+    svg.append("text").attr("x",20).attr("y",30).text("No graph data.");
+    return;
+  }
+
+  const nodeById = new Map(graph.nodes.map(n => [n.id, n]));
+
+  const linkForce = d3.forceLink(graph.links).id(d => d.id).distance(120).strength(1);
+
+  const simulation = d3.forceSimulation(graph.nodes)
+    .force("link", linkForce)
+    .force("charge", d3.forceManyBody().strength(-400))
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    .force("collide", d3.forceCollide(20));
+
+  // links
+  const link = svg.append("g")
+      .attr("stroke", "#aaa")
+      .selectAll("line")
+      .data(graph.links)
+      .enter().append("line")
+      .attr("stroke-width", 1.8);
+
+  // nodes
+  const node = svg.append("g")
+    .selectAll("g")
+    .data(graph.nodes)
+    .enter().append("g")
+    .call(d3.drag()
+      .on("start", (event, d) => { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+      .on("drag", (event, d) => { d.fx = event.x; d.fy = event.y; })
+      .on("end", (event, d) => { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }));
+
+  node.append("circle")
+    .attr("r", d => d.label === "Movies" ? 12 : 9)
+    .attr("fill", d => d.label === "Movies" ? "#0d6efd" : (d.label === "Actors" ? "#198754" : "#ffc107"))
+    .attr("stroke", "#fff")
+    .attr("stroke-width", 1.2);
+
+  node.append("text")
+    .attr("class", "node-label")
+    .attr("x", 14)
+    .attr("y", 4)
+    .text(d => d.title);
+
+  // tooltip
+  const tooltip = d3.select("body").append("div")
+    .style("position","absolute")
+    .style("padding","6px 8px")
+    .style("background","#222")
+    .style("color","#fff")
+    .style("border-radius","4px")
+    .style("font-size","12px")
+    .style("display","none")
+    .style("pointer-events","none");
+
+  node.on("mouseover", (event, d) => {
+    tooltip.style("display","block").html(`<strong>${d.title}</strong><br>${d.label}`);
+  }).on("mousemove", (event) => {
+    tooltip.style("left",(event.pageX+10)+"px").style("top",(event.pageY+10)+"px");
+  }).on("mouseout", () => tooltip.style("display","none"))
+    .on("dblclick", (event, d) => {
+      // on double-click, if it's a movie, load that movie's recommendations & graph
+      if (d.label === "Movies") {
+        input.value = d.properties.title || d.title || "";
+        document.getElementById("search-form").dispatchEvent(new Event("submit", {cancelable: true, bubbles: true}));
+      }
+    });
+
+  simulation.on("tick", () => {
+    link
+      .attr("x1", d => d.source.x)
+      .attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x)
+      .attr("y2", d => d.target.y);
+
+    node.attr("transform", d => `translate(${d.x},${d.y})`);
+  });
+
+  // zoom
+  svg.call(d3.zoom().on("zoom", (event) => {
+    svg.selectAll("g").attr("transform", event.transform);
+  }));
+}
+</script>
+</body>
+</html>
